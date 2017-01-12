@@ -3,6 +3,7 @@ package com.tehmou.book.androidchatclient;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.EditText;
 
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
@@ -30,8 +31,13 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "chat message: " + args[0].toString()));
 
         Gson gson = new Gson();
-        ChatMessage chatMessage = new ChatMessage("hello world");
-        socket.emit("chat message", gson.toJson(chatMessage));
+
+        EditText editText = (EditText) findViewById(R.id.edit_text);
+        findViewById(R.id.send_button)
+                .setOnClickListener(event -> {
+                    ChatMessage chatMessage = new ChatMessage(editText.getText().toString());
+                    socket.emit("chat message", gson.toJson(chatMessage));
+                });
     }
 
     @Override
