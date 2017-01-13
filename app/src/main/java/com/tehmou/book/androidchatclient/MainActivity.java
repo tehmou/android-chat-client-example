@@ -3,7 +3,9 @@ package com.tehmou.book.androidchatclient;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ListView;
 
 import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
@@ -13,14 +15,14 @@ import com.google.gson.Gson;
 import java.net.URISyntaxException;
 
 import io.reactivex.Observable;
-import io.reactivex.disposables.Disposable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposables;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private Socket socket;
-    private Disposable chatMessageSubscription;
+    private ChatViewModel chatViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,12 +35,20 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Socket connected"));
         socket.connect();
 
-        chatMessageSubscription =
-                createListener(socket).subscribe(message ->
-                    Log.d(TAG, "chat message: " + message)
-                );
-
         Gson gson = new Gson();
+
+        chatViewModel = new ChatViewModel(createListener(socket));
+
+        ListView listView = (ListView) findViewById(R.id.list_view);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+        listView.setAdapter(arrayAdapter);
+
+        chatViewModel.getMessageList()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(list -> {
+                    arrayAdapter.clear();
+                    arrayAdapter.addAll(list);
+                });
 
         EditText editText = (EditText) findViewById(R.id.edit_text);
         findViewById(R.id.send_button)
@@ -51,14 +61,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        if (chatMessageSubscription != null &&
-                !chatMessageSubscription.isDisposed()) {
-            chatMessageSubscription.dispose();
-            chatMessageSubscription = null;
-        }
-
-        // Disconnect WebSocket
         socket.disconnect();
     }
 
