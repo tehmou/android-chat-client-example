@@ -5,16 +5,22 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.EditText;
 
+import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.google.gson.Gson;
 
 import java.net.URISyntaxException;
 
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.disposables.Disposables;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private Socket socket;
+    private Disposable chatMessageSubscription;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,8 +33,10 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Socket connected"));
         socket.connect();
 
-        socket.on("chat message", args ->
-                Log.d(TAG, "chat message: " + args[0].toString()));
+        chatMessageSubscription =
+                createListener(socket).subscribe(message ->
+                    Log.d(TAG, "chat message: " + message)
+                );
 
         Gson gson = new Gson();
 
@@ -44,8 +52,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
+        if (chatMessageSubscription != null &&
+                !chatMessageSubscription.isDisposed()) {
+            chatMessageSubscription.dispose();
+            chatMessageSubscription = null;
+        }
+
         // Disconnect WebSocket
         socket.disconnect();
+    }
+
+    public static Observable<String> createListener(Socket socket) {
+        return Observable.create(subscriber -> {
+            Emitter.Listener listener = args -> subscriber.onNext((String) args[0]);
+            socket.on("chat message", listener);
+            subscriber.setDisposable(Disposables.fromAction(
+                    () -> socket.off("chat message", listener)
+            ));
+        });
     }
 
     public static Socket createSocket() {
