@@ -17,12 +17,14 @@ import java.net.URISyntaxException;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.subscriptions.BooleanSubscription;
+import rx.subscriptions.CompositeSubscription;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private Socket socket;
     private ChatViewModel chatViewModel;
+    private final CompositeSubscription viewSubscriptions = new CompositeSubscription();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +45,12 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
         listView.setAdapter(arrayAdapter);
 
-        chatViewModel.getMessageList()
+        viewSubscriptions.add(chatViewModel.getMessageList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(list -> {
                     arrayAdapter.clear();
                     arrayAdapter.addAll(list);
-                });
+                }));
 
         EditText editText = (EditText) findViewById(R.id.edit_text);
         findViewById(R.id.send_button)
@@ -65,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
 
         chatViewModel.unsubscribe();
+        viewSubscriptions.clear();
 
         // Disconnect WebSocket
         socket.disconnect();
