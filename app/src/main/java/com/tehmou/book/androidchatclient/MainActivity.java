@@ -56,11 +56,15 @@ public class MainActivity extends AppCompatActivity {
                     ChatMessage chatMessage = new ChatMessage(editText.getText().toString());
                     socket.emit("chat message", gson.toJson(chatMessage));
                 });
+
+        chatViewModel.subscribe();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        chatViewModel.unsubscribe();
 
         // Disconnect WebSocket
         socket.disconnect();

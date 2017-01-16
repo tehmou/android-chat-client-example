@@ -7,18 +7,29 @@ import java.util.List;
 
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
+import rx.subscriptions.CompositeSubscription;
 
 public class ChatViewModel {
+    private final CompositeSubscription subscriptions = new CompositeSubscription();
+    private final Observable<String> chatMessageObservable;
     private final BehaviorSubject<List<String>> messageList = BehaviorSubject.create();
 
     public ChatViewModel(Observable<String> chatMessageObservable) {
+        this.chatMessageObservable = chatMessageObservable;
+    }
+
+    public void subscribe() {
         Gson gson = new Gson();
-        chatMessageObservable
+        subscriptions.add(chatMessageObservable
                 .map(json -> gson.fromJson(json, ChatMessage.class))
                 .scan(new ArrayList<>(), ChatViewModel::arrayAccumulatorFunction)
                 .flatMap(list ->
                         Observable.from(list).map(ChatMessage::toString).toList())
-                .subscribe(messageList::onNext);
+                .subscribe(messageList::onNext));
+    }
+
+    public void unsubscribe() {
+        subscriptions.clear();
     }
 
     private static List<ChatMessage> arrayAccumulatorFunction(
