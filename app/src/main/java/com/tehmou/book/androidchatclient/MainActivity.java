@@ -16,6 +16,7 @@ import java.net.URISyntaxException;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposables;
 
 public class MainActivity extends AppCompatActivity {
@@ -23,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Socket socket;
     private ChatViewModel chatViewModel;
+    private final CompositeDisposable viewSubscriptions = new CompositeDisposable();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +45,12 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
         listView.setAdapter(arrayAdapter);
 
-        chatViewModel.getMessageList()
+        viewSubscriptions.add(chatViewModel.getMessageList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(list -> {
                     arrayAdapter.clear();
                     arrayAdapter.addAll(list);
-                });
+                }));
 
         EditText editText = (EditText) findViewById(R.id.edit_text);
         findViewById(R.id.send_button)
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         chatViewModel.unsubscribe();
+        viewSubscriptions.clear();
 
         // Disconnect WebSocket
         socket.disconnect();
