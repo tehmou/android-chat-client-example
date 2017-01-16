@@ -6,19 +6,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.subjects.BehaviorSubject;
 
 public class ChatViewModel {
+    private final CompositeDisposable subscriptions = new CompositeDisposable();
+    private final Observable<String> chatMessageObservable;
     private final BehaviorSubject<List<String>> messageList = BehaviorSubject.create();
 
     public ChatViewModel(Observable<String> chatMessageObservable) {
+        this.chatMessageObservable = chatMessageObservable;
+    }
+
+    public void subscribe() {
         Gson gson = new Gson();
-        chatMessageObservable
+        subscriptions.add(chatMessageObservable
                 .map(json -> gson.fromJson(json, ChatMessage.class))
                 .scan(new ArrayList<>(), ChatViewModel::arrayAccumulatorFunction)
                 .flatMap(list ->
                         Observable.fromIterable(list).map(ChatMessage::toString).toList().toObservable())
-                .subscribe(messageList::onNext);
+                .subscribe(messageList::onNext));
+    }
+
+    public void unsubscribe() {
+        subscriptions.clear();
     }
 
     private static List<ChatMessage> arrayAccumulatorFunction(
