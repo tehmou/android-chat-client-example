@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private Socket socket;
+    private ChatStore chatStore;
     private ChatViewModel chatViewModel;
     private final CompositeDisposable viewSubscriptions = new CompositeDisposable();
 
@@ -39,7 +40,15 @@ public class MainActivity extends AppCompatActivity {
 
         Gson gson = new Gson();
 
-        chatViewModel = new ChatViewModel(createListener(socket));
+        chatStore = new ChatStore();
+        viewSubscriptions.add(
+            createListener(socket)
+                    .map(json ->
+                            gson.fromJson(json, ChatMessage.class))
+                    .subscribe(chatStore::put)
+        );
+
+        chatViewModel = new ChatViewModel(chatStore.getStream());
 
         ListView listView = (ListView) findViewById(R.id.list_view);
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
