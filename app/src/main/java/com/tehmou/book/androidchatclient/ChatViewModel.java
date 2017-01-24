@@ -18,8 +18,20 @@ public class ChatViewModel {
     public void subscribe() {
         subscriptions.add(chatMessageObservable
                 .flatMap(list ->
-                        Observable.fromIterable(list).map(ChatMessage::toString).toList().toObservable())
+                        Observable.fromIterable(list)
+                                .map(ChatViewModel::formatMessage)
+                                .toList()
+                                .toObservable())
                 .subscribe(messageList::onNext));
+    }
+
+    private static String formatMessage(ChatMessage chatMessage) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(chatMessage.getMessage());
+        if (chatMessage.isPending()) {
+            builder.append(" (pending)");
+        }
+        return builder.toString();
     }
 
     public void unsubscribe() {

@@ -7,6 +7,7 @@ public class ChatMessage {
     private String id;
     private String message;
     private long timestamp;
+    private boolean isPending = true;
 
     public ChatMessage(String message) {
         this.id = UUID.randomUUID().toString();
@@ -24,6 +25,10 @@ public class ChatMessage {
 
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public boolean isPending() {
+        return isPending;
     }
 
     @Override
