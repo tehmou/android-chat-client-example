@@ -43,8 +43,8 @@ public class MainActivity extends AppCompatActivity {
         chatStore = new ChatStore();
         viewSubscriptions.add(
             createListener(socket)
-                    .map(json ->
-                            gson.fromJson(json, ChatMessage.class))
+                    .map(json -> gson.fromJson(json, ChatMessage.class))
+                    .map(chatMessage -> chatMessage.setIsPending(false))
                     .subscribe(chatStore::put)
         );
 
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.send_button)
                 .setOnClickListener(event -> {
                     ChatMessage chatMessage = new ChatMessage(editText.getText().toString());
+                    chatStore.put(chatMessage);
                     socket.emit("chat message", gson.toJson(chatMessage));
                 });
 

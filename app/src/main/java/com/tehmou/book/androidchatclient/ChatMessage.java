@@ -15,6 +15,13 @@ public class ChatMessage {
         this.timestamp = new Date().getTime();
     }
 
+    public ChatMessage(ChatMessage chatMessage) {
+        this.id = chatMessage.id;
+        this.message = chatMessage.message;
+        this.timestamp = chatMessage.timestamp;
+        this.isPending = chatMessage.isPending;
+    }
+
     public String getId() {
         return id;
     }
@@ -34,5 +41,11 @@ public class ChatMessage {
     @Override
     public String toString() {
         return message;
+    }
+
+    public ChatMessage setIsPending(boolean isPending) {
+        ChatMessage chatMessage = new ChatMessage(this);
+        chatMessage.isPending = isPending;
+        return chatMessage;
     }
 }
