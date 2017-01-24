@@ -1,5 +1,8 @@
 package com.tehmou.book.androidchatclient;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import rx.Observable;
@@ -8,15 +11,20 @@ import rx.subscriptions.CompositeSubscription;
 
 public class ChatViewModel {
     private final CompositeSubscription subscriptions = new CompositeSubscription();
-    private final Observable<List<ChatMessage>> chatMessageObservable;
+    private final Observable<Collection<ChatMessage>> chatMessageObservable;
     private final BehaviorSubject<List<String>> messageList = BehaviorSubject.create();
 
-    public ChatViewModel(Observable<List<ChatMessage>> chatMessageObservable) {
+    public ChatViewModel(Observable<Collection<ChatMessage>> chatMessageObservable) {
         this.chatMessageObservable = chatMessageObservable;
     }
 
     public void subscribe() {
         subscriptions.add(chatMessageObservable
+                .map(list -> {
+                    List<ChatMessage> sortedList = new ArrayList<>(list);
+                    Collections.sort(sortedList, this::chatMessageComparator);
+                    return sortedList;
+                })
                 .flatMap(list ->
                         Observable.from(list)
                                 .map(ChatViewModel::formatMessage)
@@ -31,6 +39,15 @@ public class ChatViewModel {
             builder.append(" (pending)");
         }
         return builder.toString();
+    }
+
+    private int chatMessageComparator(ChatMessage a, ChatMessage b) {
+        if (a.getTimestamp() > b.getTimestamp()) {
+            return 1;
+        } else if (a.getTimestamp() < b.getTimestamp()) {
+            return -1;
+        }
+        return 0;
     }
 
     public void unsubscribe() {
