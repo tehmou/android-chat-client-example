@@ -1,7 +1,5 @@
 package com.tehmou.book.androidchatclient;
 
-import com.google.gson.Gson;
-
 import java.util.List;
 
 import rx.Observable;
@@ -20,8 +18,19 @@ public class ChatViewModel {
     public void subscribe() {
         subscriptions.add(chatMessageObservable
                 .flatMap(list ->
-                        Observable.from(list).map(ChatMessage::toString).toList())
+                        Observable.from(list)
+                                .map(ChatViewModel::formatMessage)
+                                .toList())
                 .subscribe(messageList::onNext));
+    }
+
+    private static String formatMessage(ChatMessage chatMessage) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(chatMessage.getMessage());
+        if (chatMessage.isPending()) {
+            builder.append(" (pending)");
+        }
+        return builder.toString();
     }
 
     public void unsubscribe() {
