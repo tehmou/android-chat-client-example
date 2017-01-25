@@ -12,7 +12,6 @@ import io.reactivex.disposables.CompositeDisposable;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private ChatModel chatModel;
     private ChatViewModel chatViewModel;
     private final CompositeDisposable viewSubscriptions = new CompositeDisposable();
 
@@ -21,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        chatModel = new ChatModel();
+        ChatModel chatModel = ((ChatApplication) getApplication()).getChatModel();
         chatModel.onCreate();
         chatModel.connect();
 
@@ -51,8 +50,5 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         chatViewModel.unsubscribe();
         viewSubscriptions.clear();
-
-        chatModel.disconnect();
-        chatModel.onDestroy();
     }
 }
