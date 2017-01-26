@@ -11,6 +11,7 @@ public class ChatApplication extends Application {
         chatModel = new ChatModel();
         chatModel.onCreate();
         chatModel.connect();
+        chatModel.loadOldMessages();
     }
 
     public ChatModel getChatModel() {

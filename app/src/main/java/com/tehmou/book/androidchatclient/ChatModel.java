@@ -11,18 +11,33 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 
 import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposables;
+import io.reactivex.schedulers.Schedulers;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ChatModel {
     private static final String TAG = ChatModel.class.getSimpleName();
 
     private final Gson gson = new Gson();
+    private Retrofit retrofit;
+    private ChatMessageApi chatMessageApi;
+
     private Socket socket;
     private final ChatStore chatStore = new ChatStore();
     private final CompositeDisposable subscriptions = new CompositeDisposable();
 
     public void onCreate() {
+        retrofit = new Retrofit.Builder()
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create())
+                .baseUrl(Config.SERVER_URL)
+                .build();
+        chatMessageApi = retrofit.create(ChatMessageApi.class);
+
         // Create WebSocket
         socket = createSocket();
         socket.on("connect", args ->
@@ -77,5 +92,17 @@ public class ChatModel {
             Log.e(TAG, "Error creating socket", e);
         }
         return socket;
+    }
+
+    public void loadOldMessages() {
+        chatMessageApi.messages()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(messages -> {
+                    for (String messageJson : messages) {
+                        ChatMessage chatMessage = gson.fromJson(messageJson, ChatMessage.class);
+                        chatStore.put(new ChatMessage(chatMessage).setIsPending(false));
+                    }
+                });
     }
 }
