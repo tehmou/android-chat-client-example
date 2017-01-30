@@ -14,13 +14,21 @@ import com.google.gson.Gson;
 
 import java.net.URISyntaxException;
 
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 import rx.subscriptions.BooleanSubscription;
 import rx.subscriptions.CompositeSubscription;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
+
+    private final Gson gson = new Gson();
+    private Retrofit retrofit;
+    private ChatMessageApi chatMessageApi;
 
     private Socket socket;
     private ChatStore chatStore;
@@ -38,7 +46,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Socket connected"));
         socket.connect();
 
-        Gson gson = new Gson();
+        retrofit = new Retrofit.Builder()
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create())
+                .baseUrl(Config.SERVER_URL)
+                .build();
+        chatMessageApi = retrofit.create(ChatMessageApi.class);
 
         chatStore = new ChatStore();
         viewSubscriptions.add(
