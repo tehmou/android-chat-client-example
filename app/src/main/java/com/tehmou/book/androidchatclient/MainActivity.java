@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
                 });
 
         chatViewModel.subscribe();
+        loadOldMessages();
     }
 
     @Override
@@ -114,5 +115,17 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "Error creating socket", e);
         }
         return socket;
+    }
+
+    private void loadOldMessages() {
+        chatMessageApi.messages()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(messages -> {
+                    for (String messageJson : messages) {
+                        ChatMessage chatMessage = gson.fromJson(messageJson, ChatMessage.class);
+                        chatStore.put(new ChatMessage(chatMessage).setIsPending(false));
+                    }
+                });
     }
 }
