@@ -11,11 +11,13 @@ import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.google.gson.Gson;
+import com.jakewharton.rxbinding.widget.RxTextView;
 
 import java.net.URISyntaxException;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.subjects.BehaviorSubject;
 import rx.subscriptions.BooleanSubscription;
 import rx.subscriptions.CompositeSubscription;
 
@@ -48,7 +50,11 @@ public class MainActivity extends AppCompatActivity {
                     .subscribe(chatStore::put)
         );
 
-        chatViewModel = new ChatViewModel(chatStore.getStream());
+        Observable<String> searchTextObservable =
+                RxTextView.textChanges((EditText) findViewById(R.id.search_text))
+                        .map(CharSequence::toString);
+
+        chatViewModel = new ChatViewModel(chatStore.getStream(), searchTextObservable);
 
         ListView listView = (ListView) findViewById(R.id.list_view);
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
